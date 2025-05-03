@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Monisakor Primary School Website
 
 This is a modern school website developed for Monisakor Primary School. It provides information about the school, a student registration system, a multilingual interface, and an admin panel for managing content.
@@ -33,3 +34,7 @@ This is a modern school website developed for Monisakor Primary School. It provi
    npm install
    npm start
    ```
+=======
+# monisakor-primary-school
+A website for Monisakor Primary School built using PHP, React, and Tailwind CSS.
+>>>>>>> b762aac58550b2a33c72b28d63023cf7a9f17fe3

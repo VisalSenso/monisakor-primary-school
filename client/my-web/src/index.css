@@ -1,0 +1,42 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Nokora:wght@100;300;400;700;900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light*));
+
+@theme {
+  --font-nokora: "Nokora", sans-serif;
+
+  --color-primary: #58b0e0;
+  --color-secondary: #11BE86;
+  --color-background-dark: #0E0E0E;
+  --color-background-light: #F3F4F6;
+  --color-color-text-light: #5A5A5A;
+  --color-card-dark: #1e1e1e;
+  --color-card-light: #ffffff;
+}
+
+.khmer-font {
+  font-family: 'Nokora', sans-serif;
+}
+
+.english-font {
+  font-family: 'Poppins', sans-serif;
+}
+
+html {
+  background-color: #F3F4F6 !important;
+  color: black !important;
+  transition: background-color 0.3s ease;
+  font-family: var(--font-nokora);
+}
+
+/* Dark mode */
+html.dark {
+  background-color: #0E0E0E !important;
+  /* Ensure it's applied */
+  color: white !important;
+  transition: background-color 0.3s ease;
+}

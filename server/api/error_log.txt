@@ -1,0 +1,7 @@
+Error: [2] Undefined array key "full_name" in C:\xampp\htdocs\project\monisakor-primary-school\server\api\Join.php on line 28
+Error: [2] Undefined array key "full_name" in C:\xampp\htdocs\project\monisakor-primary-school\server\api\Join.php on line 27
+Error: [2] Undefined array key "full_name" in C:\xampp\htdocs\project\monisakor-primary-school\server\api\Join.php on line 27
+Error: [2] Undefined variable $conn in C:\xampp\htdocs\project\monisakor-primary-school\server\api\Join.php on line 81
+Error: [2] Undefined variable $conn in C:\xampp\htdocs\project\monisakor-primary-school\server\api\Join.php on line 81
+Error: [2] Undefined variable $conn in C:\xampp\htdocs\project\monisakor-primary-school\server\api\Join.php on line 81
+Error: [2] Undefined variable $conn in C:\xampp\htdocs\project\monisakor-primary-school\server\api\Join.php on line 81

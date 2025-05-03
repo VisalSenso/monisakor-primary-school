@@ -1,0 +1,13 @@
+Array
+(
+    [full_name] =>  lyza lyza
+    [gender] => Male
+    [dob] => 2025-03-29
+    [father_name] => jack jack
+    [father_job] => Killer
+    [mother_name] => mey mey
+    [mother_job] => Ladybug
+    [place_of_birth] => Kompon Ror
+    [current_place] => Kompon Ror
+    [phone] => 21322123
+)

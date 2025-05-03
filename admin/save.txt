@@ -1,0 +1,1685 @@
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+include '../connection/database.php';
+session_start();
+
+if (!isset($_SESSION["identity_code"])) {
+    header("Location: login.php");
+    exit();
+}
+
+if ($_SESSION["isadmin"] != 1) {
+    header("Location: scribe.php");
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    if (isset($_POST['add_committe'])) {
+        $IDImage = 'file-upload-modified';
+        $fileUploadName = $_FILES[$IDImage]['name'];
+        $fileUploadTmp = $_FILES[$IDImage]['tmp_name'];
+
+        $targetDirectory = '../assects/images/pta/';
+        $targetFilePath = "../assects/images/pta/" . basename($fileUploadName);
+        $sqlfileurl = "";
+
+        if (move_uploaded_file($fileUploadTmp, $targetFilePath)) {
+            $sqlfileurl = "/assects/images/pta/" . basename($fileUploadName);
+        }
+
+        if ($connectionobj->connect_error) {
+            die("Connection failed: " . $connectionobj->connect_error);
+        }
+
+        $committeName = $_POST['committeName'];
+        $committePosition = $_POST['committePosition'];
+        $committePhone = $_POST["staffContact"];
+
+        $sql = "INSERT INTO management_committee (name, position, contact_no, image_src) VALUES (?, ?, ?, ?)";
+        $stmt = $connectionobj->prepare($sql);
+        $stmt->bind_param("ssss", $committeName, $committePosition, $committePhone, $sqlfileurl);
+
+        if ($stmt->execute()) {
+            echo '
+            <script>
+            alert("សមាជិកគណៈកម្មាធិការថ្មីត្រូវបានបន្ថែមដោយជោគជ័យ")
+            </script>';
+        } else {
+            echo "កំហុស: " . $stmt->error;
+        }
+
+        $stmt->close();
+        $connectionobj->close();
+    }
+
+    if (isset($_POST['add_staff'])) {
+        $IDImage = 'file-upload-modified';
+        $fileUploadName = $_FILES[$IDImage]['name'];
+        $fileUploadTmp = $_FILES[$IDImage]['tmp_name'];
+
+        $targetDirectory = '../assects/images/staff/';
+        $targetFilePath = "../assects/images/staff/" . basename($fileUploadName);
+        $sqlfileurl = "";
+
+        if (move_uploaded_file($fileUploadTmp, $targetFilePath)) {
+            $sqlfileurl = "../assects/images/staff/" . basename($fileUploadName);
+        }
+
+        if ($connectionobj->connect_error) {
+            die("Connection failed: " . $connectionobj->connect_error);
+        }
+
+        $staffName = $_POST['staffName'];
+        $staffPost = $_POST['staffPost'];
+        $staffQualification = $_POST['staffQualification'];
+        $staffPhone = $_POST["staffContact"];
+
+        $sql = "INSERT INTO staffs (name, post, contact, qualification, image_src) VALUES (?, ?, ?, ?, ?)";
+        $stmt = $connectionobj->prepare($sql);
+        $stmt->bind_param("sssss", $staffName, $staffPost, $staffPhone, $staffQualification, $sqlfileurl);
+
+        if ($stmt->execute()) {
+            echo '
+            <script>
+            alert("បុគ្គលិកថ្មីត្រូវបានបន្ថែមដោយជោគជ័យ")
+            </script>';
+        } else {
+            echo "កំហុស: " . $stmt->error;
+        }
+
+        $stmt->close();
+        $connectionobj->close();
+    }
+
+    if (isset($_POST['committe_delete'])) {
+        $committeId = $_POST['comitteDelete_id'];
+        mysqli_query($connection, "DELETE FROM `management_committee` WHERE id = $committeId;");
+        echo '
+            <script>
+            window.location.replace("changeStaff.php");            
+            </script>';
+        exit;
+    }
+
+    if (isset($_POST['staffDelete'])) {
+        $staffId = $_POST['staffDelete_id'];
+        mysqli_query($connection, "DELETE FROM `staffs` WHERE id = $staffId;");
+        echo '
+            <script>
+            window.location.replace("changeStaff.php");            
+            </script>';
+        exit;
+    }
+
+    if (isset($_POST['update_committe'])) {
+        $committeId = $_POST['committeId'];
+        $IDImage = 'file-upload-modified' . $committeId;
+        $fileUploadName = $_FILES[$IDImage]['name'];
+        $fileUploadTmp = $_FILES[$IDImage]['tmp_name'];
+
+        $targetDirectory = '../assects/images/pta/';
+        $targetFilePath = "../assects/images/pta/" . basename($fileUploadName);
+        $sqlfileurl = $_POST['imageLocationcommitte'];
+
+        if (move_uploaded_file($fileUploadTmp, $targetFilePath)) {
+            $sqlfileurl = "/assects/images/pta/" . basename($fileUploadName);
+        }
+
+        if ($connectionobj->connect_error) {
+            die("Connection failed: " . $connectionobj->connect_error);
+        }
+
+        $committeName = $_POST['comitteName'];
+        $committePost = $_POST['comittepost'];
+        $committePhone = $_POST["comittePhone"];
+
+        $sql = "UPDATE management_committee SET name=?, position=?, contact_no=?, image_src=? WHERE id=?";
+        $stmt = $connectionobj->prepare($sql);
+        $stmt->bind_param("sssss", $committeName, $committePost, $committePhone, $sqlfileurl, $committeId);
+
+        if ($stmt->execute()) {
+            echo '
+            <script>
+            alert("សមាជិកគណៈកម្មាធិការត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ")
+            window.location.replace("changeStaff.php");
+            </script>';
+        } else {
+            echo "កំហុស: " . $stmt->error;
+        }
+
+        $stmt->close();
+        $connectionobj->close();
+    }
+
+    if (isset($_POST['update_staffs'])) {
+        $staffId = $_POST['staffId'];
+        $IDImage = 'file-upload-modified' . $staffId;
+        $fileUploadName = $_FILES[$IDImage]['name'];
+        $fileUploadTmp = $_FILES[$IDImage]['tmp_name'];
+
+        $targetDirectory = '../assects/images/staff/';
+        $targetFilePath = "../assects/images/staff/" . basename($fileUploadName);
+        $sqlfileurl = $_POST['imageLocation'];
+
+        if (move_uploaded_file($fileUploadTmp, $targetFilePath)) {
+            $sqlfileurl = "../assects/images/staff/" . basename($fileUploadName);
+        }
+
+        if ($connectionobj->connect_error) {
+            die("Connection failed: " . $connectionobj->connect_error);
+        }
+
+        $staffName = $_POST['staffName'];
+        $staffPost = $_POST['staffPost'];
+        $staffPhone = $_POST["staffPhone"];
+        $staffqualification = $_POST["staffqualification"];
+
+        $sql = "UPDATE staffs SET name=?, post=?, qualification=?, contact=?, image_src=? WHERE id=?";
+        $stmt = $connectionobj->prepare($sql);
+        $stmt->bind_param("ssssss", $staffName, $staffPost, $staffqualification, $staffPhone, $sqlfileurl, $staffId);
+
+        if ($stmt->execute()) {
+            echo '
+            <script>
+            alert("បុគ្គលិកត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ")
+            </script>';
+        } else {
+            echo "កំហុស: " . $stmt->error;
+        }
+
+        $stmt->close();
+        $connectionobj->close();
+    }
+
+    if (isset($_POST['delete_committe_to_trash'])) {
+        $committeId = $_POST['committeId'];
+
+        if (!filter_var($committeId, FILTER_VALIDATE_INT)) {
+            $_SESSION['message'] = "លេខសម្គាល់គណៈកម្មាធិការមិនត្រឹមត្រូវ។";
+            $_SESSION['message_type'] = "error";
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        }
+
+        $deleteToTrashQuery = "UPDATE `management_committee` SET `deleted_at` = NOW() WHERE `id` = ?";
+        if ($stmt = mysqli_prepare($connection, $deleteToTrashQuery)) {
+            mysqli_stmt_bind_param($stmt, "i", $committeId);
+
+            if (mysqli_stmt_execute($stmt)) {
+                $_SESSION['message'] = "គណៈកម្មាធិការត្រូវបានផ្លាស់ទីទៅធុងសំរាម។";
+                $_SESSION['message_type'] = "success";
+            } else {
+                $_SESSION['message'] = "មិនអាចផ្លាស់ទីគណៈកម្មាធិការទៅធុងសំរាមបានទេ: " . mysqli_error($connection);
+                $_SESSION['message_type'] = "error";
+            }
+
+            mysqli_stmt_close($stmt);
+        } else {
+            $_SESSION['message'] = "កំហុសក្នុងការរៀបចំសេចក្តីថ្លែងការណ៍: " . mysqli_error($connection);
+            $_SESSION['message_type'] = "error";
+        }
+
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    }
+
+    if (isset($_POST['restore_committe_from_trash'])) {
+        $committeId = $_POST['committeId'];
+
+        if (!filter_var($committeId, FILTER_VALIDATE_INT)) {
+            $_SESSION['message'] = "លេខសម្គាល់គណៈកម្មាធិការមិនត្រឹមត្រូវ។";
+            $_SESSION['message_type'] = "error";
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        }
+
+        $restoreQuery = "UPDATE `management_committee` SET `deleted_at` = NULL WHERE `id` = ?";
+        if ($stmt = mysqli_prepare($connection, $restoreQuery)) {
+            mysqli_stmt_bind_param($stmt, "i", $committeId);
+
+            if (mysqli_stmt_execute($stmt)) {
+                $_SESSION['message'] = "គណៈកម្មាធិការត្រូវបានស្តារឡើងវិញដោយជោគជ័យ។";
+                $_SESSION['message_type'] = "success";
+            } else {
+                $_SESSION['message'] = "មិនអាចស្តារគណៈកម្មាធិការឡើងវិញបានទេ: " . mysqli_error($connection);
+                $_SESSION['message_type'] = "error";
+            }
+
+            mysqli_stmt_close($stmt);
+        } else {
+            $_SESSION['message'] = "កំហុសក្នុងការរៀបចំសេចក្តីថ្លែងការណ៍: " . mysqli_error($connection);
+            $_SESSION['message_type'] = "error";
+        }
+
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    }
+}
+
+$defaultavatar = "../assects/images/defaults/defaultaltimage.jpg";
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Staff | Monisakor primary school</title>
+    <script defer src="https://unpkg.com/alpinejs@3.2.3/dist/cdn.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="../assects/images/admin_logo.png">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.0/flowbite.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.0/flowbite.min.js"></script>
+
+
+</head>
+
+<body class="bg-gray-50 dark:bg-[#0E0E0E]">
+    <?php include('../includes/admin_header.php') ?>
+    <a href="http://localhost/project/monisakor-primary-school/admin/">
+
+        <button
+            class="m-8 px-8 py-2 rounded-full bg-gradient-to-b from-blue-500 to-blue-600 text-white focus:ring-2 focus:ring-blue-400 hover:shadow-xl transition duration-200">
+            ត្រឡប់
+        </button>
+
+    </a>
+    <!-- Main modal -->
+
+
+
+
+    <section class="text-gray-600 body-font">
+        <div class="container px-5 py-10 mx-auto">
+            <div class="flex flex-col text-center w-full mb-5">
+                <h1 class="sm:text-3xl text-2xl font-medium title-font mb-4 text-gray-900 dark:text-white">ធ្វើបច្ចុប្បន្នភាពគណៈកម្មាធិការ និងបុគ្គលិក
+                </h1>
+                <p class="md:text-base lg:w-2/3 mx-auto leading-relaxed text-base text-gray-900 dark:text-white">
+                    🎉 សូមស្វាគមន៍មកកាន់ទំព័រនេះដែលឧទ្ទិសដល់ការគ្រប់គ្រង និងធ្វើបច្ចុប្បន្នភាពព័ត៌មានបុគ្គលិក និងគណៈកម្មាធិការ! 📝 វាបង្កើតផ្ទាំងប្រើប្រាស់ដែលងាយស្រួលសម្រាប់ការធ្វើបច្ចុប្បន្នភាពព័ត៌មានបុគ្គលិក និងរចនាសម្ព័ន្ធគណៈកម្មាធិការ។ ការបញ្ចូលព័ត៌មានរបស់អ្នកមានតម្លៃក្នុងការធានាថាកំណត់ត្រានៅតែមានភាពត្រឹមត្រូវ និងពាក់ព័ន្ធ។ សូមមេត្តាប្រើប្រាស់លក្ខណៈពិសេសដែលមានដើម្បីរក្សាទុកអ្វីៗទាំងអស់ឱ្យទាន់សម័យ។ 🚀
+                </p>
+            </div>
+
+
+        </div>
+    </section>
+
+
+    <!-- Modal toggle -->
+
+
+    <!-- Adding Staff -->
+    <div id="authentication-modal" tabindex="-1" aria-hidden="true"
+        class="fadeIn hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+        <div class="relative p-4 w-full max-w-md max-h-full">
+            <!-- Modal content -->
+            <div class="relative bg-white rounded-lg shadow dark:bg-[#181818]">
+                <!-- Modal header -->
+                <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                        បញ្ចូលបុគ្គលិកសាលា
+                    </h3>
+                    <button type="button"
+                        class="end-2.5 text-white bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                        data-modal-hide="authentication-modal">
+                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 14 14">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                        </svg>
+                        <span class="sr-only">បិទម៉ូដាល់</span>
+                    </button>
+                </div>
+                <!-- Modal body -->
+                <div class="p-4 md:p-5">
+                    <form class="space-y-4" action="" method="POST" enctype="multipart/form-data">
+                        <div><label for="new_file"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ជ្រើសរើសរូបថតទំហំល្មមសម្រាប់ការមើលល្អ</label></div>
+                        <div class="flex items-center justify-center w-full">
+
+
+                            <input name="file-upload-modified"
+                                class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:bg-[#181818] dark:text-white focus:outline-none dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400"
+                                id="file_input" type="file" accept="image/*">
+
+                        </div>
+                        <div>
+                            <label for="staffName"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ឈ្មោះ</label>
+                            <input type="text" name="staffName"
+                                class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5  dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                                placeholder="Mey Mey" required>
+                            <label for="staffPost"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">មុខតំណែង</label>
+                            <input type="text" name="staffPost"
+                                class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5  dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                                placeholder="គ្រូបង្រៀន" required>
+                            <label for="staffContact"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">លេខទូរស័ព្ទ</label>
+                            <input type="text" name="staffContact"
+                                class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5  dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                                placeholder="9804545454" required>
+                            <label for="staffqualification"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">វប្បធម៌</label>
+                            <input type="text" name="staffQualification"
+                                class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5  dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                                placeholder="PHD" required>
+                        </div>
+
+
+                        <button type="submit" name="add_staff"
+                            class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">បញ្ចូលបុគ្គលិក</button>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adding Committe Menber -->
+
+    <div id="authentication-modal2" tabindex="-1" aria-hidden="true"
+        class="fadeIn hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+        <div class="relative p-4 w-full max-w-md max-h-full">
+            <!-- Modal content -->
+            <div class="relative bg-white rounded-lg shadow dark:bg-[#181818]">
+                <!-- Modal header -->
+                <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                        បន្ថែមសមាជិកគណៈកម្មាធិការ
+                    </h3>
+                    <button type="button"
+                        class="end-2.5 text-white bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                        data-modal-hide="authentication-modal2">
+                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 14 14">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                        </svg>
+                        <span class="sr-only">បិទម៉ូដាល់</span>
+                    </button>
+                </div>
+                <!-- Modal body -->
+                <div class="p-4 md:p-5">
+                    <form class="space-y-4" action="" method="POST" enctype="multipart/form-data">
+                        <div><label for="new_file"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ជ្រើសរើសរូបថតទំហំល្មមសម្រាប់ការមើលល្អ</label></div>
+                        <div class="flex items-center justify-center w-full">
+
+
+                            <input name="file-upload-modified"
+                                class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:bg-[#181818] dark:text-white focus:outline-none dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400"
+                                id="file_input" type="file" accept="image/*">
+
+                        </div>
+                        <div>
+                            <label for="committeName"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ឈ្មោះ</label>
+                            <input type="text" name="committeName"
+                                class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5  dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                                placeholder="Thir Kumar Dahal" required>
+                            <label for="staffPost"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">មុខតំណែង</label>
+                            <input type="text" name="committePosition"
+                                class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5  dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                                placeholder="គ្រូបង្រៀន" required>
+                            <label for="committeContact"
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">លេខទូរស័ព្ទ</label>
+                            <input type="text" name="staffContact"
+                                class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5  dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                                placeholder="9804545454" required>
+
+                        </div>
+
+
+                        <button type="submit" name="add_committe"
+                            class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">បន្ថែម
+                            គណៈកម្មាធិការ</button>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+    <main>
+        <!-- Start block -->
+        <section class="bg-gray-50 dark:bg-[#181818] dark:bg-[#0E0E0E] p-3 mt-5 sm:p-5 antialiased">
+            <div class="mx-auto max-w-screen-xl px-0 lg:px-12">
+                <!-- Start coding here -->
+
+                <div class="bg-white dark:bg-[#1e1e1e] relative shadow-md sm:rounded-lg overflow-hidden">
+
+                    <div
+                        class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
+                        <div class="w-full md:w-1/2">
+                            <form class="flex items-center">
+                                <label for="simple-search" class="sr-only">ស្វែងរក</label>
+                                <div class="relative w-full">
+                                    <button data-modal-target="authentication-modal2" data-modal-toggle="authentication-modal2"
+                                        class=" block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                                        type="button">
+                                        បន្ថែមសមាជិកគណៈកម្មាធិការ
+                                    </button>
+
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                    <?php
+                    if (isset($_SESSION['message'])):
+                        $message = $_SESSION['message'];
+                        $message_type = $_SESSION['message_type'];
+                    ?>
+                        <div class="p-4 mb-4 text-sm text-<?= $message_type == 'success' ? 'green' : 'red' ?>-800 bg-<?= $message_type == 'success' ? 'green' : 'red' ?>-200 rounded-lg"
+                            role="alert">
+                            <?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?>
+                        </div>
+                        <?php unset($_SESSION['message'], $_SESSION['message_type']); ?>
+                    <?php endif; ?>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500 dark:text-white">
+                            <thead
+                                class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#181818] dark:bg-[#181818] dark:text-white">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">គណៈកម្មាធិការ</th>
+                                    <th scope="col" class="px-4 py-3">មុខតំណែង</th>
+                                    <th scope="col" class="px-4 py-4">លេខទូរស័ព្ទ</th>
+                                    <th scope="col" class="px-4 py-3">
+                                        <span class="sr-only">សកម្មភាព</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+
+
+                                $fetchmanagementCommitte = "SELECT * FROM management_committee WHERE deleted_at IS NULL";
+                                $managementCommitte = mysqli_query($connection, $fetchmanagementCommitte);
+                                $totalmanagementCommitte = mysqli_num_rows($managementCommitte);
+
+
+                                if ($totalmanagementCommitte > 0) {
+                                    while ($row = mysqli_fetch_assoc($managementCommitte)) {
+                                        $managementcommitteId = $row['id'];
+                                ?>
+                                        <tr class="border-b dark:border-gray-700">
+                                            <th scope="row"
+                                                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                <div class="flex items-center mr-3">
+                                                    <img src="../<?= $row['image_src']; ?>" alt="" class="h-8 w-auto mr-3"
+                                                        onerror="this.src='<?= $defaultavatar; ?>'">
+                                                    <?= $row['name']; ?>
+                                                </div>
+                                            </th>
+                                            <th scope="row"
+                                                class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-[10rem] truncate">
+                                                <?= $row['position']; ?>
+                                            </th>
+                                            <td class="px-4 py-3"><?= $row['contact_no']; ?></td>
+                                            <td class="px-4 py-3 flex items-center justify-end">
+                                                <button id="apple-imac-27-dropdown-button"
+                                                    data-dropdown-toggle="apple-imac-27-dropdowncommitte<?= $row['id']; ?>"
+                                                    class="inline-flex items-center text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 p-1.5 dark:hover-bg-gray-800 text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-white dark:hover:text-gray-100"
+                                                    type="button">
+                                                    <svg class="w-5 h-5" aria-hidden="true" fill="currentColor"
+                                                        viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                        <path
+                                                            d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                    </svg>
+                                                </button>
+                                                <div id="apple-imac-27-dropdowncommitte<?= $managementcommitteId; ?>"
+                                                    class="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-[#181818] dark:divide-gray-600">
+                                                    <ul class="py-1 text-sm" aria-labelledby="apple-imac-27-dropdown-button">
+                                                        <li>
+                                                            <button type="button"
+                                                                data-modal-target="updateProductModal<?= $managementcommitteId; ?>"
+                                                                data-modal-toggle="updateProductModal<?= $managementcommitteId; ?>"
+                                                                class="flex w-full items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-gray-700 dark:text-gray-200">
+                                                                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg"
+                                                                    viewbox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                                    <path
+                                                                        d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                                                                    <path fill-rule="evenodd" clip-rule="evenodd"
+                                                                        d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                                                                </svg>
+                                                                កែសម្រួល
+                                                            </button>
+                                                        </li>
+                                                        <li>
+                                                            <form
+                                                                action="<?= htmlspecialchars($_SERVER['PHP_SELF'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                method="POST">
+                                                                <input type="hidden" name="committeId"
+                                                                    value="<?= $managementcommitteId; ?>">
+
+                                                                <button type="submit" name="delete_committe_to_trash"
+                                                                    class="flex w-full items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200">
+                                                                    <svg class="w-6 h-6 text-gray-800 dark:text-red-400"
+                                                                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                                                        width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                                                        <path stroke="currentColor" stroke-linecap="round"
+                                                                            stroke-linejoin="round" stroke-width="2"
+                                                                            d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z" />
+                                                                    </svg>
+                                                                    លុបទៅធុងសំរាម
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+
+                                            </td>
+
+                                        </tr>
+                                <?php
+                                    }
+                                }
+                                ?>
+
+
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4"
+                        aria-label="Table navigation">
+
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Trash section -->
+            <button data-modal-target="timeline-modal" data-modal-toggle="timeline-modal"
+                class="ml-20 mt-4 block focus:ring-4 focus:outline-none font-medium rounded-full text-sm px-5 py-2.5 text-center relative"
+                type="button">
+                <svg class="w-10 h-10 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                    width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z" />
+                </svg>
+
+                <!-- Badge for deleted items count -->
+                <?php
+                $countTrashQuery = "SELECT COUNT(*) AS trash_count FROM `management_committee` WHERE `deleted_at` IS NOT NULL";
+                $result = mysqli_query($connection, $countTrashQuery);
+                $trashCount = mysqli_fetch_assoc($result)['trash_count'];
+                if ($trashCount > 0) {
+                    echo '<span class="absolute top-1 right-3 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">' . $trashCount . '</span>';
+                }
+                ?>
+            </button>
+            <div id="timeline-modal" tabindex="-1" aria-hidden="true"
+                class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                <div class="mx-auto w-[90vw] max-w-screen-2xl px-0 lg:px-12 bg-gray-50 dark:bg-[#181818] dark:bg-[#1e1e1e]">
+                    <div
+                        class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
+
+                        <button type="button"
+                            class="text-white bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm h-8 w-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                            data-modal-toggle="timeline-modal">
+                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                            </svg>
+                            <span class="sr-only">Close modal</span>
+                        </button>
+                    </div>
+                    <!-- Start coding here -->
+                    <div class="bg-white dark:bg-[#1e1e1e] relative shadow-md sm:rounded-lg overflow-hidden">
+                        <div
+                            class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
+                            <div class="w-full md:w-1/2">
+                                <form class="flex items-center">
+                                    <label for="simple-search" class="sr-only">Search</label>
+                                    <div class="relative w-full">
+                                        <div
+                                            class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                            <h2 class="text-white"><b>Trash</b></h2>
+                                        </div>
+
+                                    </div>
+                                </form>
+                            </div>
+
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-500 dark:text-white">
+                                <thead
+                                    class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#181818] dark:bg-[#181818] dark:text-white">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3">គណៈកម្មាធិការ</th>
+                                        <th scope="col" class="px-4 py-3">មុខតំណែង</th>
+                                        <th scope="col" class="px-4 py-4">លេខទូរស័ព្ទ</th>
+                                        <th scope="col" class="px-4 py-3">
+                                            <span class="sr-only">សកម្មភាព</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    $fetchmanagementCommitte = "SELECT * FROM `management_committee` WHERE `deleted_at` IS NOT NULL";
+                                    $managementCommitte = mysqli_query($connection, $fetchmanagementCommitte);
+                                    $totalmanagementCommitte = mysqli_num_rows($managementCommitte);
+
+                                    if ($totalmanagementCommitte > 0) {
+                                        while ($row = mysqli_fetch_assoc($managementCommitte)) {
+                                            $managementcommitteId = $row['id'];
+                                    ?>
+                                            <tr class="border-b dark:border-gray-700">
+                                                <th scope="row"
+                                                    class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                    <div class="flex items-center mr-3">
+                                                        <img src="../<?php echo $row['image_src']; ?>" alt=""
+                                                            class="h-8 w-auto mr-3"
+                                                            onerror="this.src='<?php echo $defaultavatar; ?>'">
+                                                        <?php echo $row['name']; ?>
+                                                    </div>
+                                                </th>
+                                                <th scope="row"
+                                                    class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-[10rem] truncate">
+                                                    <?php echo $row['position']; ?>
+                                                </th>
+                                                <td class="px-4 py-3"><?php echo $row['contact_no']; ?></td>
+                                                <td class="px-4 py-3 flex items-center justify-end">
+                                                    <button id="apple-imac-27-dropdown-button"
+                                                        data-dropdown-toggle="apple-imac-27-dropdowncommitte<?php echo $row['id']; ?>"
+                                                        class="inline-flex items-center text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 p-1.5 dark:hover-bg-gray-800 text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-white dark:hover:text-gray-100"
+                                                        type="button">
+                                                        <svg class="w-5 h-5" aria-hidden="true" fill="currentColor"
+                                                            viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path
+                                                                d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                        </svg>
+                                                    </button>
+                                                    <div id="apple-imac-27-dropdowncommitte<?php echo $managementcommitteId; ?>"
+                                                        class="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-[#181818] dark:divide-gray-600">
+                                                        <ul class="py-1 text-sm"
+                                                            aria-labelledby="apple-imac-27-dropdown-button">
+                                                            <li>
+                                                                <form
+                                                                    action="<?= htmlspecialchars($_SERVER['PHP_SELF'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                                    method="POST">
+                                                                    <input type="hidden" name="committeId"
+                                                                        value="<?= $managementcommitteId; ?>">
+                                                                    <button type="submit" name="restore_committe_from_trash"
+                                                                        class="flex w-full items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-gray-700 dark:text-gray-200">
+                                                                        <svg class="w-4 h-4 mr-2"
+                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                            viewbox="0 0 20 20" fill="currentColor"
+                                                                            aria-hidden="true">
+                                                                            <path
+                                                                                d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                                                                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                                                                d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                                                                        </svg>
+                                                                        ស្តារ
+                                                                    </button>
+                                                                </form>
+                                                            </li>
+
+
+                                                            <li>
+                                                                <button type="button"
+                                                                    data-modal-target="deleteModal<?php echo $row['id']; ?>"
+                                                                    data-modal-toggle="deleteModal<?php echo $row['id']; ?>"
+                                                                    class="flex w-full items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 text-red-500 dark:hover:text-red-400">
+                                                                    <svg class="w-4 h-4 mr-2" viewbox="0 0 14 15" fill="none"
+                                                                        xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                                                        <path fill-rule="evenodd" clip-rule="evenodd"
+                                                                            fill="currentColor"
+                                                                            d="M6.09922 0.300781C5.93212 0.30087 5.76835 0.347476 5.62625 0.435378C5.48414 0.523281 5.36931 0.649009 5.29462 0.798481L4.64302 2.10078H1.59922C1.36052 2.10078 1.13161 2.1956 0.962823 2.36439C0.79404 2.53317 0.699219 2.76209 0.699219 3.00078C0.699219 3.23948 0.79404 3.46839 0.962823 3.63718C1.13161 3.80596 1.36052 3.90078 1.59922 3.90078V12.9008C1.59922 13.3782 1.78886 13.836 2.12643 14.1736C2.46399 14.5111 2.92183 14.7008 3.39922 14.7008H10.5992C11.0766 14.7008 11.5344 14.5111 11.872 14.1736C12.2096 13.836 12.3992 13.3782 12.3992 12.9008V3.90078C12.6379 3.90078 12.8668 3.80596 13.0356 3.63718C13.2044 3.46839 13.2992 3.23948 13.2992 3.00078C13.2992 2.76209 13.2044 2.53317 13.0356 2.36439C12.8668 2.1956 12.6379 2.10078 12.3992 2.10078H9.35542L8.70382 0.798481C8.62913 0.649009 8.5143 0.523281 8.37219 0.435378C8.23009 0.347476 8.06631 0.30087 7.89922 0.300781H6.09922ZM4.29922 5.70078C4.29922 5.46209 4.39404 5.23317 4.56282 5.06439C4.73161 4.8956 4.96052 4.80078 5.19922 4.80078C5.43791 4.80078 5.66683 4.8956 5.83561 5.06439C6.0044 5.23317 6.09922 5.46209 6.09922 5.70078V11.1008C6.09922 11.3395 6.0044 11.5684 5.83561 11.7372C5.66683 11.906 5.43791 12.0008 5.19922 12.0008C4.96052 12.0008 4.73161 11.906 4.56282 11.7372C4.39404 11.5684 4.29922 11.3395 4.29922 11.1008V5.70078ZM8.79922 4.80078C8.56052 4.80078 8.33161 4.8956 8.16282 5.06439C7.99404 5.23317 7.89922 5.46209 7.89922 5.70078V11.1008C7.89922 11.3395 7.99404 11.5684 8.16282 11.7372C8.33161 11.906 8.56052 12.0008 8.79922 12.0008C9.03791 12.0008 9.26683 11.906 9.43561 11.7372C9.6044 11.5684 9.69922 11.3395 9.69922 11.1008V5.70078C9.69922 5.46209 9.6044 5.23317 9.43561 5.06439C9.26683 4.8956 9.03791 4.80078 8.79922 4.80078Z" />
+                                                                    </svg>
+                                                                    លុប
+                                                                </button>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                    <?php
+                                        }
+                                    }
+                                    ?>
+                                </tbody>
+
+                            </table>
+                        </div>
+                        <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4"
+                            aria-label="Table navigation">
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Update modal -->
+        <?php
+        $fetchmanagementCommitte = "SELECT * FROM `management_committee`;";
+        $managementCommitte = mysqli_query($connection, $fetchmanagementCommitte);
+        $totalmanagementCommitte = mysqli_num_rows($managementCommitte);
+
+        if ($totalmanagementCommitte > 0) {
+            while ($row = mysqli_fetch_assoc($managementCommitte)) {
+                $managementcommitteId = $row['id'];
+        ?>
+            <div id="updateProductModal<?= $managementcommitteId ?>" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                <div class="relative p-4 w-full max-w-2xl max-h-full">
+                <div class="relative p-4 bg-white rounded-lg shadow dark:bg-[#1e1e1e] sm:p-5">
+                    <div class="flex justify-between items-center pb-4 mb-4 rounded-t border-b sm:mb-5 dark:border-gray-600">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">ធ្វើបច្ចុប្បន្នភាពគណៈកម្មាធិការ</h3>
+                    <button type="button" class="text-white bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-toggle="updateProductModal<?= $managementcommitteId ?>">
+                        <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="sr-only">បិទម៉ូដាល់</span>
+                    </button>
+                    </div>
+                    <form method="post" id="UpdateNotice<?= $managementcommitteId ?>" enctype="multipart/form-data">
+                    <div class="grid gap-4 mb-4 sm:grid-cols-1">
+                        <div><label for="new_file" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ឯកសារ (ប្រសិនបើមិនជ្រើសរើស នឹងប្រើឯកសារចាស់)</label></div><br>
+                        <div class="flex items-center justify-center w-full">
+                        <input name="file-upload-modified<?= $managementcommitteId ?>" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:bg-[#181818] dark:text-white focus:outline-none dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400" id="file_input" type="file" accept="image/*">
+                        </div>
+                        <div class="sm:col-span-2">
+                        <label for="subject" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ឈ្មោះ</label>
+                        <input type="text" name="comitteName" id="name" class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" value="<?= $row['name'] ?>" placeholder="ឈ្មោះ">
+                        <label for="post" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">មុខតំណែង</label>
+                        <input type="text" name="comittepost" id="name" class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" value="<?= $row['position'] ?>" placeholder="មុខតំណែង">
+                        <label for="phone" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">លេខទូរស័ព្ទ</label>
+                        <input type="text" name="comittePhone" id="name" class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" value="<?= $row['contact_no'] ?>" placeholder="លេខទូរស័ព្ទ">
+                        </div>
+                        <input type="text" name="imageLocationcommitte" id="name" class="hidden bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" value="<?= $row['image_src'] ?>" placeholder="9812000000">
+                        <input type="hidden" name="committeId" value="<?= $managementcommitteId ?>" />
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button name="update_committe" type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">ធ្វើបច្ចុប្បន្នភាពគណៈកម្មាធិការ</button>
+                    </div>
+                    </form>
+                </div>
+                </div>
+            </div>
+            <div id="deleteModal<?= $managementcommitteId ?>" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                <div class="relative p-4 w-full max-w-md max-h-full">
+                <form method="post" id="deleteModal<?= $managementcommitteId ?>">
+                    <div class="relative p-4 text-center bg-white rounded-lg shadow dark:bg-[#1e1e1e] sm:p-5">
+                    <button type="button" class="text-white absolute top-2.5 right-2.5 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-toggle="deleteModal<?= $managementcommitteId ?>">
+                        <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="sr-only">បិទម៉ូដាល់</span>
+                    </button>
+                    <svg class="text-white dark:text-gray-500 w-11 h-11 mb-3.5 mx-auto" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <p class="mb-4 text-gray-500 dark:text-gray-300">តើអ្នកប្រាកដថាចង់លុបធាតុនេះមែនទេ?</p>
+                    <div class="flex justify-center items-center space-x-4">
+                        <button data-modal-toggle="deleteModal<?= $managementcommitteId ?>" type="button" class="py-2 px-3 text-sm font-medium text-gray-500 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 hover:text-gray-900 focus:z-10 dark:bg-[#181818] dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">ទេ, បោះបង់</button>
+                        <input type="hidden" name="comitteDelete_id" value="<?= $managementcommitteId ?>" />
+                        <button name="committe_delete" type="submit" class="py-2 px-3 text-sm font-medium text-center text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-900">បាទ/ចាស, ខ្ញុំប្រាកដ</button>
+                    </div>
+                    </div>
+                </form>
+                </div>
+            </div>
+        <?php
+            }
+        }
+        ?>
+
+
+    </main>
+
+    <main>
+        <!-- Start block -->
+        <section class="bg-gray-50 dark:bg-[#181818]  p-3 mt-5 sm:p-5 antialiased">
+            <div class="mx-auto max-w-screen-xl px-0 lg:px-12">
+                <!-- Start coding here -->
+                <div class="bg-white dark:bg-[#1e1e1e] relative shadow-md sm:rounded-lg overflow-hidden">
+                    <div
+                        class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
+                        <div class="w-full md:w-1/2">
+                            <form class="flex items-center">
+                                <label for="simple-search" class="sr-only">ស្វែងរក</label>
+                                <div class="relative w-full">
+                                    <button data-modal-target="authentication-modal" data-modal-toggle="authentication-modal"
+                                        class=" block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                                        type="button">
+                                        បញ្ចូលបុគ្គលិកសាលា
+                                    </button>
+
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500 dark:text-white">
+                            <thead
+                                class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#181818] dark:bg-[#181818] dark:text-white">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">បុគ្គលិក</th>
+                                    <th scope="col" class="px-4 py-3">មុខតំណែង</th>
+                                    <th scope="col" class="px-4 py-4">លេខទូរស័ព្ទ</th>
+                                    <th scope="col" class="px-4 py-4">វប្បធម៌</th>
+                                    <th scope="col" class="px-4 py-3">
+                                        <span class="sr-only">សកម្មភាព</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $fetchmanagementCommitte = "SELECT * FROM `staffs` WHERE `deleted_at` IS NOT NULL";//go
+                                $managementCommitte = mysqli_query($connection, $fetchmanagementCommitte);
+                                $totalmanagementCommitte = mysqli_num_rows($managementCommitte);
+
+                                if ($totalmanagementCommitte > 0) {
+                                    while ($row = mysqli_fetch_assoc($managementCommitte)) {
+                                        $staffsId = $row['id'];
+                                ?>
+                                        <tr class="border-b dark:border-gray-700">
+                                            <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                <div class="flex items-center mr-3">
+                                                    <img src="<?= $row['image_src']; ?>" alt="" class="h-8 w-auto mr-3" onerror="this.src='<?= $defaultavatar; ?>'">
+                                                    <?= $row['name']; ?>
+                                                </div>
+                                            </th>
+                                            <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-[10rem] truncate"><?= $row['post']; ?></th>
+                                            <td class="px-4 py-3"><?= $row['contact']; ?></td>
+                                            <td class="px-4 py-3"><?= $row['qualification']; ?></td>
+                                            <td class="px-4 py-3 flex items-center justify-end">
+                                                <button id="apple-imac-27-dropdown-button" data-dropdown-toggle="apple-imac-27-dropdown<?= $row['id']; ?>" class="inline-flex items-center text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 p-1.5 dark:hover-bg-gray-800 text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-white dark:hover:text-gray-100" type="button">
+                                                    <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                    </svg>
+                                                </button>
+                                                <div id="apple-imac-27-dropdown<?= $staffsId; ?>" class="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-[#181818] dark:divide-gray-600">
+                                                    <ul class="py-1 text-sm" aria-labelledby="apple-imac-27-dropdown-button">
+                                                        <li>
+                                                            <button type="button" data-modal-target="updatestaffsModel<?= $staffsId; ?>" data-modal-toggle="updatestaffsModel<?= $staffsId; ?>" class="flex w-full items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-gray-700 dark:text-gray-200">
+                                                                <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                                    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                                                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                                                                </svg>
+                                                                កែសម្រួល
+                                                            </button>
+                                                        </li>
+                                                        <li>
+                                                            <button type="button" data-modal-target="deleteStaffModel<?= $row['id']; ?>" data-modal-toggle="deleteStaffModel<?= $row['id']; ?>" class="flex w-full items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 text-red-500 dark:hover:text-red-400">
+                                                                <svg class="w-4 h-4 mr-2" viewbox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                                                    <path fill-rule="evenodd" clip-rule="evenodd" fill="currentColor" d="M6.09922 0.300781C5.93212 0.30087 5.76835 0.347476 5.62625 0.435378C5.48414 0.523281 5.36931 0.649009 5.29462 0.798481L4.64302 2.10078H1.59922C1.36052 2.10078 1.13161 2.1956 0.962823 2.36439C0.79404 2.53317 0.699219 2.76209 0.699219 3.00078C0.699219 3.23948 0.79404 3.46839 0.962823 3.63718C1.13161 3.80596 1.36052 3.90078 1.59922 3.90078V12.9008C1.59922 13.3782 1.78886 13.836 2.12643 14.1736C2.46399 14.5111 2.92183 14.7008 3.39922 14.7008H10.5992C11.0766 14.7008 11.5344 14.5111 11.872 14.1736C12.2096 13.836 12.3992 13.3782 12.3992 12.9008V3.90078C12.6379 3.90078 12.8668 3.80596 13.0356 3.63718C13.2044 3.46839 13.2992 3.23948 13.2992 3.00078C13.2992 2.76209 13.2044 2.53317 13.0356 2.36439C12.8668 2.1956 12.6379 2.10078 12.3992 2.10078H9.35542L8.70382 0.798481C8.62913 0.649009 8.5143 0.523281 8.37219 0.435378C8.23009 0.347476 8.06631 0.30087 7.89922 0.300781H6.09922ZM4.29922 5.70078C4.29922 5.46209 4.39404 5.23317 4.56282 5.06439C4.73161 4.8956 4.96052 4.80078 5.19922 4.80078C5.43791 4.80078 5.66683 4.8956 5.83561 5.06439C6.0044 5.23317 6.09922 5.46209 6.09922 5.70078V11.1008C6.09922 11.3395 6.0044 11.5684 5.83561 11.7372C5.66683 11.906 5.43791 12.0008 5.19922 12.0008C4.96052 12.0008 4.73161 11.906 4.56282 11.7372C4.39404 11.5684 4.29922 11.3395 4.29922 11.1008V5.70078ZM8.79922 4.80078C8.56052 4.80078 8.33161 4.8956 8.16282 5.06439C7.99404 5.23317 7.89922 5.46209 7.89922 5.70078V11.1008C7.89922 11.3395 7.99404 11.5684 8.16282 11.7372C8.33161 11.906 8.56052 12.0008 8.79922 12.0008C9.03791 12.0008 9.26683 11.906 9.43561 11.7372C9.6044 11.5684 9.69922 11.3395 9.69922 11.1008V5.70078C9.69922 5.46209 9.6044 5.23317 9.43561 5.06439C9.26683 4.8956 9.03791 4.80078 8.79922 4.80078Z" />
+                                                                </svg>
+                                                                លុប
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                <?php
+                                    }
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4"
+                        aria-label="Table navigation">
+                    </nav>
+                </div>
+            </div>
+        </section>
+
+        <!-- Update modal -->
+        <?php
+        $fetchmanagementCommitte = "SELECT * FROM `staffs`;";
+        $managementCommitte = mysqli_query($connection, $fetchmanagementCommitte);
+        $totalmanagementCommitte = mysqli_num_rows($managementCommitte);
+
+        if ($totalmanagementCommitte > 0) {
+            while ($row = mysqli_fetch_assoc($managementCommitte)) {
+                $staffsId = $row['id'];
+        ?>
+            <div id="updatestaffsModel<?= $staffsId ?>" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                <div class="relative p-4 w-full max-w-2xl max-h-full">
+                <div class="relative p-4 bg-white rounded-lg shadow dark:bg-[#1e1e1e] sm:p-5">
+                    <div class="flex justify-between items-center pb-4 mb-4 rounded-t border-b sm:mb-5 dark:border-gray-600">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">ធ្វើបច្ចុប្បន្នភាពបុគ្គលិក</h3>
+                    <button type="button" class="text-white bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-toggle="updatestaffsModel<?= $staffsId ?>">
+                        <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="sr-only">បិទម៉ូដាល់</span>
+                    </button>
+                    </div>
+                    <form method="post" id="UpdateNotice<?= $staffsId ?>" enctype="multipart/form-data">
+                    <div class="grid gap-4 mb-4 sm:grid-cols-1">
+                        <div>
+                        <label for="new_file" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ឯកសារ (ប្រសិនបើមិនជ្រើសរើស នឹងប្រើឯកសារចាស់)</label>
+                        </div>
+                        <br>
+                        <div class="flex items-center justify-center w-full">
+                        <input name="file-upload-modified<?= $staffsId ?>" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:bg-[#181818] dark:text-white focus:outline-none dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400" id="file_input" type="file" accept="image/*">
+                        </div>
+                        <div class="sm:col-span-2">
+                        <label for="subject" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ឈ្មោះ</label>
+                        <input type="text" name="staffName" id="name" class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" value="<?= $row['name'] ?>" placeholder="ឈ្មោះបុគ្គលិក">
+                        <label for="post" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">មុខតំណែង</label>
+                        <input type="text" name="staffPost" id="name" class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" value="<?= $row['post'] ?>" placeholder="មុខតំណែង">
+                        <label for="post" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">វប្បធម៌</label>
+                        <input type="text" name="staffqualification" id="name" class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" value="<?= $row['qualification'] ?>" placeholder="វប្បធម៌">
+                        <label for="phone" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">លេខទូរស័ព្ទ</label>
+                        <input type="text" name="staffPhone" id="name" class="bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" value="<?= $row['contact'] ?>" placeholder="លេខទូរស័ព្ទ">
+                        <input type="text" name="imageLocation" id="name" class="hidden bg-gray-50 dark:bg-[#181818] border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-[#181818] dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" value="<?= $row['image_src'] ?>" placeholder="9812000000">
+                        </div>
+                        <input type="hidden" name="staffId" value="<?= $staffsId ?>" />
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button name="update_staffs" type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">ធ្វើបច្ចុប្បន្នភាពបុគ្គលិក</button>
+                    </div>
+                    </form>
+                </div>
+                </div>
+            </div>
+            <div id="deleteStaffModel<?= $staffsId ?>" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                <div class="relative p-4 w-full max-w-md max-h-full">
+                <form method="post" id="deleteStaffModel<?= $staffsId ?>">
+                    <div class="relative p-4 text-center bg-white rounded-lg shadow dark:bg-[#1e1e1e] sm:p-5">
+                    <button type="button" class="text-white absolute top-2.5 right-2.5 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-toggle="deleteStaffModel<?= $staffsId ?>">
+                        <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="sr-only">បិទម៉ូដាល់</span>
+                    </button>
+                    <svg class="text-white dark:text-gray-500 w-11 h-11 mb-3.5 mx-auto" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <p class="mb-4 text-gray-500 dark:text-gray-300">តើអ្នកប្រាកដថាចង់លុបធាតុនេះមែនទេ?</p>
+                    <div class="flex justify-center items-center space-x-4">
+                        <button data-modal-toggle="deleteStaffModel<?= $staffsId ?>" type="button" class="py-2 px-3 text-sm font-medium text-gray-500 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 hover:text-gray-900 focus:z-10 dark:bg-[#181818] dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">ទេ, បោះបង់</button>
+                        <input type="hidden" name="staffDelete_id" value="<?= $staffsId ?>" />
+                        <button name="staffDelete" type="submit" class="py-2 px-3 text-sm font-medium text-center text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-900">បាទ/ចាស, ខ្ញុំប្រាកដ</button>
+                    </div>
+                    </div>
+                </form>
+                </div>
+            </div>
+        <?php
+            }
+        }
+        ?>
+
+
+    </main>
+
+    <?php include('../includes/admin_footer.php') ?>
+
+    <script>
+        function displayFileName() {
+            var fileInput = document.getElementById('file-upload');
+            var fileInfoContainer = document.getElementById('file-info');
+
+
+            if (fileInput.files.length > 0) {
+                fileInfoContainer.innerHTML = '         File: ' + fileInput.files[0].name;
+                fileInfoContainer.classList.remove('hidden');
+
+            }
+        }
+
+        function displayFileNameShow() {
+            var fileInput = document.getElementById('dropzone-file');
+            var fileInfoContainer = document.getElementById('file-info-modified');
+
+            if (fileInput.files.length > 0) {
+                fileInfoContainer.innerHTML = 'File: ' + fileInput.files[0].name;
+                fileInfoContainer.classList.remove('hidden');
+            }
+        }
+
+        console.clear();
+    </script>
+
+
+
+</body>
+
+
+</html>
+//search.php
+<?php
+// Show errors for debugging
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+// Database connection
+include '../connection/database.php';
+
+// Get search term and page from URL
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+
+// Define limit and calculate offset
+$limit = 10;  // Number of records per page
+$offset = ($page - 1) * $limit;
+
+// Base query
+$query = "SELECT * FROM `school_notice` WHERE `deleted_at` IS NULL";
+
+// If search is entered, modify query
+if (!empty($search)) {
+    $searchSafe = mysqli_real_escape_string($connection, $search);
+    $searchSafe = str_replace(['%', '_'], ['\%', '\_'], $searchSafe);
+
+    $query .= " AND (
+        `about` LIKE CONCAT('%', ?, '%') 
+        OR `about_en` LIKE CONCAT('%', ?, '%') 
+        OR `time` LIKE CONCAT('%', ?, '%') 
+        OR `date` LIKE CONCAT('%', ?, '%')
+    )";
+}
+
+// Add pagination limit and offset
+$query .= " LIMIT ? OFFSET ?";
+
+// Prepare and bind
+$stmt = mysqli_prepare($connection, $query);
+
+if (!empty($search)) {
+    mysqli_stmt_bind_param($stmt, 'ssssii', $searchSafe, $searchSafe, $searchSafe, $searchSafe, $limit, $offset);
+} else {
+    mysqli_stmt_bind_param($stmt, 'ii', $limit, $offset);
+}
+
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+// Start table
+if (mysqli_num_rows($result) > 0) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $id = htmlspecialchars($row['id']);
+        $about = htmlspecialchars($row['about']);
+        $aboutEn = htmlspecialchars($row['about_en']);
+        $postedBy = htmlspecialchars($row['posted_by']);
+        $time = htmlspecialchars($row['time']);
+        $date = htmlspecialchars($row['date']);
+        $lastModified = htmlspecialchars($row['last_modified']);
+
+        echo "<tr class='border-b dark:border-gray-700'>";
+        echo "<td class='px-4 py-3 max-w-[10rem] truncate text-gray-900 dark:text-white'>$about</td>";
+        echo "<td class='px-4 py-3 max-w-[10rem] truncate text-gray-900 dark:text-white'>$aboutEn</td>";
+        echo "<td class='px-4 py-3'>$postedBy</td>";
+        echo "<td class='px-4 py-3'>$time $date</td>";
+        echo "<td class='px-4 py-3'>$lastModified</td>";
+        echo "<td class='px-4 py-3 text-right'>
+                <button id='dropdownButton$id' data-dropdown-toggle='dropdownMenu$id' class='text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white p-1.5 rounded-lg focus:outline-none'>
+                    <svg class='w-5 h-5' fill='currentColor' viewBox='0 0 20 20'>
+                        <path d='M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z' />
+                    </svg>
+                </button>
+
+                <div id='dropdownMenu$id' class='hidden z-10 bg-white rounded-lg shadow w-44 dark:bg-gray-800'>
+                    <ul class='py-1 text-sm text-gray-700 dark:text-gray-200'>
+                        <li>
+                            <button data-modal-target='editModal$id' data-modal-toggle='editModal$id'
+                                class='flex items-center w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700'>
+                                ✏️ Edit
+                            </button>
+                        </li>
+                        <li>
+                            <form action='delete_notice.php' method='POST'>
+                                <input type='hidden' name='id' value='$id'>
+                                <button type='submit' name='delete' 
+                                    class='flex items-center w-full px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700'>
+                                    🗑️ Delete
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </td>";
+        echo "</tr>";
+
+        // Edit Modal
+        echo "
+        <div id='editModal$id' tabindex='-1' class='hidden fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto h-[calc(100%-1rem)]'>
+            <div class='relative w-full max-w-md'>
+                <div class='relative bg-white rounded-lg shadow dark:bg-gray-700'>
+                    <div class='flex items-center justify-between p-4 border-b dark:border-gray-600'>
+                        <h3 class='text-lg font-semibold text-gray-900 dark:text-white'>Edit Notice</h3>
+                        <button type='button' class='text-gray-400 hover:text-gray-900 dark:hover:text-white' data-modal-hide='editModal$id'>
+                            ✖️
+                        </button>
+                    </div>
+                    <div class='p-6'>
+                        <form action='update_notice.php' method='POST'>
+                            <input type='hidden' name='id' value='$id'>
+                            <div class='mb-4'>
+                                <label class='block mb-2 text-sm font-medium'>About (KH)</label>
+                                <input type='text' name='about' value='$about' class='w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-600 dark:text-white' required>
+                            </div>
+                            <div class='mb-4'>
+                                <label class='block mb-2 text-sm font-medium'>About (EN)</label>
+                                <input type='text' name='about_en' value='$aboutEn' class='w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-600 dark:text-white' required>
+                            </div>
+                            <button type='submit' name='update' class='w-full p-2 text-white bg-blue-600 rounded hover:bg-blue-700'>
+                                Save
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ";
+    }
+} else {
+    echo "<tr><td colspan='6' class='text-center py-4'>No notices found</td></tr>";
+}
+
+// Get total number of records
+$totalQuery = "SELECT COUNT(*) FROM `school_notice` WHERE `deleted_at` IS NULL";
+if (!empty($search)) {
+    $totalQuery .= " AND ( `about` LIKE CONCAT('%', ?, '%') OR `about_en` LIKE CONCAT('%', ?, '%') OR `time` LIKE CONCAT('%', ?, '%') OR `date` LIKE CONCAT('%', ?, '%') )";
+}
+
+$totalStmt = mysqli_prepare($connection, $totalQuery);
+if (!empty($search)) {
+    mysqli_stmt_bind_param($totalStmt, 'ssss', $searchSafe, $searchSafe, $searchSafe, $searchSafe);
+}
+mysqli_stmt_execute($totalStmt);
+$totalResult = mysqli_stmt_get_result($totalStmt);
+$totalRows = mysqli_fetch_array($totalResult)[0];
+
+$totalPages = ceil($totalRows / $limit);
+
+// Pagination controls
+echo "<div class='pagination flex space-x-1 items-center justify-center mt-4'>";
+
+// Previous button
+if ($page > 1) {
+    echo "<a href='?page=" . ($page - 1) . (!empty($search) ? '&search=' . urlencode($search) : '') . "' 
+            class='rounded-full border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-slate-800 hover:border-slate-800 focus:text-white focus:bg-slate-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-slate-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2'>
+                Prev
+          </a>";
+}
+
+// Page numbers
+for ($i = 1; $i <= $totalPages; $i++) {
+    $class = $i == $page ? 'bg-slate-800 text-white' : 'border border-slate-300 text-slate-600 hover:text-white hover:bg-slate-800 hover:border-slate-800';
+    echo "<a href='?page=$i" . (!empty($search) ? '&search=' . urlencode($search) : '') . "' 
+            class='min-w-9 rounded-full $class py-2 px-3.5 text-center text-sm transition-all shadow-sm hover:shadow-lg focus:text-white focus:bg-slate-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-slate-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2'>
+                $i
+          </a>";
+}
+
+// Next button
+if ($page < $totalPages) {
+    echo "<a href='?page=" . ($page + 1) . (!empty($search) ? '&search=' . urlencode($search) : '') . "' 
+            class='rounded-full border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-slate-800 hover:border-slate-800 focus:text-white focus:bg-slate-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-slate-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2'>
+                Next
+          </a>";
+}
+
+echo "</div>";
+
+
+?>
+
+<!-- ✅ Include Flowbite JS for dropdown and modal functionality -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.0/flowbite.min.js"></script>
+//end search.php
+//register_student.php<?php
+include '../connection/database.php';
+session_start();
+
+if (!isset($_SESSION["identity_code"])) {
+    header("Location: login.php");
+    exit();
+}
+
+if ($_SESSION["isadmin"] != 1) {
+    header("Location: scribe.php");
+    exit();
+}
+
+mysqli_query($connectionobj, "UPDATE `notification` SET total_notification = 0 WHERE id = 1");
+
+if (isset($_POST['student_delete'])) {
+    echo '<script>console.log("Form is submitting");</script>';
+    $studentId = $_POST["student_id"];
+
+    mysqli_query($connection, "DELETE FROM `students_register` WHERE id = $studentId;");
+    echo '
+        <script>
+        window.location.replace("registered_students.php");
+        
+        </script>';
+    exit;
+}
+$genderFilter = $_GET['gender'] ?? '';
+$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : '';
+
+$conditions = [];
+if (!empty($genderFilter)) {
+    $genderFilterEscaped = mysqli_real_escape_string($connection, $genderFilter);
+    $conditions[] = "gender = '$genderFilterEscaped'";
+}
+
+if (!empty($searchQuery)) {
+    $searchQueryEscaped = mysqli_real_escape_string($connection, $searchQuery);
+    $conditions[] = "(full_name LIKE '%$searchQueryEscaped%' 
+                    OR gender LIKE '%$searchQueryEscaped%' 
+                    OR dob LIKE '%$searchQueryEscaped%' 
+                    OR place_of_birth LIKE '%$searchQueryEscaped%')";
+}
+
+$whereClause = "";
+if (!empty($conditions)) {
+    $whereClause = "WHERE " . implode(" AND ", $conditions);
+}
+
+$query = "SELECT * FROM students_register $whereClause ORDER BY id DESC";
+$students = mysqli_query($connection, $query);
+$totalStudents = mysqli_num_rows($students);
+
+
+$limit = 5; // Students per page
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
+$offset = ($page - 1) * $limit;
+$countQuery = "SELECT COUNT(*) as total FROM students_register $whereClause";
+$countResult = mysqli_query($connection, $countQuery);
+$totalRows = mysqli_fetch_assoc($countResult)['total'];
+$totalPages = ceil($totalRows / $limit);
+
+$query = "SELECT * FROM students_register $whereClause ORDER BY id DESC LIMIT $limit OFFSET $offset";
+$students = mysqli_query($connection, $query);
+
+$defaultavatar = "../assects/images/defaults/defaultaltimage.jpg";
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registered Students | Monisakor primary school</title>
+    <script defer src="https://unpkg.com/alpinejs@3.2.3/dist/cdn.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="../assects/images/admin_logo.png">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+
+
+</head>
+<style>
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+    }
+</style>
+
+<script>
+    function printTable() {
+        const printContents = document.getElementById("print-area").innerHTML;
+        const originalContents = document.body.innerHTML;
+
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+        location.reload(); // Reload the page to restore JS behaviors
+    }
+</script>
+
+<body class="bg-gray-50 dark:bg-[#0E0E0E]">
+    <?php include('../includes/admin_header.php') ?>
+
+    <section class="text-gray-600 body-font">
+        <div class="container px-5 py-10 mx-auto">
+            <div class="flex flex-col text-center w-full mb-5">
+                <h1 class="sm:text-3xl text-2xl font-medium title-font mb-4 text-gray-700 dark:text-white">សិស្សដែលបានចុះឈ្មោះ</h1>
+                <p class="md:text-base lg:w-2/3 mx-auto leading-relaxed text-base text-gray-700 dark:text-white">
+                    សូមស្វាគមន៍មកកាន់សាលាបឋមសិក្សាមុនីសាគរ នៅទីនេះអ្នកអាចគ្រប់គ្រងសិស្សដែលបានចុះឈ្មោះទាំងអស់។
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Start block -->
+    <section class="bg-gray-50 dark:bg-[#0E0E0E] p-3 sm:p-5 antialiased">
+        <div class="mx-auto max-w-screen-2xl px-4 lg:px-12">
+            <div class="bg-white dark:bg-[#1e1e1e] relative shadow-md sm:rounded-lg overflow-hidden">
+                <div class="flex">
+                    <!-- Filter form -->
+                    <form method="GET" class="p-4">
+                        <label for="gender" class="mr-2 font-medium text-gray-700 dark:text-white">ជ្រើសរើសភេទ:</label>
+                        <select name="gender" id="gender" class="p-2 border rounded-md bg-gray-50 dark:bg-[#181818] text-gray-700 dark:text-white" onchange="this.form.submit()">
+                            <option value="" <?= $genderFilter == '' ? 'selected' : '' ?>>ទាំងអស់</option>
+                            <option value="ប្រុស" <?= $genderFilter == 'ប្រុស' ? 'selected' : '' ?>>ប្រុស</option>
+                            <option value="ស្រី" <?= $genderFilter == 'ស្រី' ? 'selected' : '' ?>>ស្រី</option>
+                        </select>
+                    </form>
+
+                    <form method="GET" class="p-4 flex items-center gap-2">
+                        <label for="search" class="font-medium text-gray-700 dark:text-white">ស្វែងរក:</label>
+                        <input type="text" name="search" id="search" placeholder="ឈ្មោះ, ភេទ, ថ្ងៃកំណើត, កន្លែងកំណើត"
+                            value="<?= htmlspecialchars($searchQuery) ?>"
+                            class="p-2 border rounded-md w-64 bg-gray-50 dark:bg-[#181818] text-white" />
+                        <button type="submit" class="px-4 py-2 bg-blue-400 text-white rounded-md hover:bg-blue-700">ស្វែងរក</button>
+                    </form>
+
+
+                    <form method="POST" action="export.php" class="p-4">
+                        <input type="hidden" name="gender" value="<?= htmlspecialchars($genderFilter) ?>">
+                        <input type="hidden" name="search" value="<?= htmlspecialchars($searchQuery) ?>">
+                        <button type="submit"
+                            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                            នាំចេញទៅ Excel
+                        </button>
+                    </form>
+
+                    <div class="p-4 ">
+                        <button type="button" onclick="printTable()"
+                            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                            Print
+                        </button>
+                    </div>
+
+                    <div class="p-4 ">
+                         <select name="" id="">
+                            <option value="">All</option>
+                            <option value="">10</option>
+                            <option value="">20</option>
+                            <option value="">30</option>
+                         </select>
+                    </div>
+
+                </div>
+
+
+                <div id="print-area" class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500 dark:text-white">
+                        <thead class="text-xl text-gray-700 uppercase bg-gray-50 dark:bg-[#181818] dark:text-white">
+                            <tr>
+                                <th class="p-4">ឈ្មោះសិស្ស</th>
+                                <th class="p-4">ចុះឈ្មោះនៅ</th>
+                                <th class="p-4">ភេទ</th>
+                                <th class="p-4">ថ្ងៃខែឆ្នាំកំណើត</th>
+                                <th class="p-4">ទីកន្លែងកំណើត</th>
+                                <th class="p-4 text-center">សកម្មភាព</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($totalStudents > 0): ?>
+                                <?php while ($row = mysqli_fetch_assoc($students)): ?>
+                                    <tr class="border-b dark:border-gray-600 hover:bg-[#272727] dark:hover:bg-[#272727]">
+                                        <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                            <?= htmlspecialchars($row['full_name']) ?>
+                                        </td>
+                                        <td class="px-4 py-3 text-gray-900 whitespace-nowrap dark:text-white">
+                                            <?= htmlspecialchars($row['created_at']) ?>
+                                        </td>
+                                        <td class="px-4 py-3 text-gray-900 whitespace-nowrap dark:text-white">
+                                            <?= htmlspecialchars($row['gender']) ?>
+                                        </td>
+                                        <td class="px-4 py-3 text-gray-900 whitespace-nowrap dark:text-white">
+                                            <?= htmlspecialchars($row['dob']) ?>
+                                        </td>
+                                        <td class="px-4 py-3 text-gray-900 whitespace-nowrap dark:text-white">
+                                            <?= htmlspecialchars($row['place_of_birth']) ?>
+                                        </td>
+                                        <td class="px-4 py-3 text-center no-print">
+                                            <div class="flex justify-center gap-2">
+                                                <!-- View Button -->
+                                                <button type="button"
+                                                    data-drawer-target="drawer-read-product-advanced<?= $row['id'] ?>"
+                                                    data-drawer-show="drawer-read-product-advanced<?= $row['id'] ?>"
+                                                    aria-controls="drawer-read-product-advanced<?= $row['id'] ?>"
+                                                    class="py-2 px-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-[#272727] hover:text-blue-700 dark:bg-[#1e1e1e] dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-white focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                                                        class="w-4 h-4 mr-1 inline-block" viewBox="0 0 24 24">
+                                                        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                                                        <path fill-rule="evenodd" clip-rule="evenodd"
+                                                            d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" />
+                                                    </svg>
+                                                    មើល
+                                                </button>
+
+                                                <!-- Delete Button -->
+                                                <button type="button"
+                                                    data-modal-target="delete-modal<?= $row['id'] ?>"
+                                                    data-modal-toggle="delete-modal<?= $row['id'] ?>"
+                                                    class="py-2 px-3 text-sm font-medium text-red-700 border border-red-700 rounded-lg hover:bg-red-800 hover:text-white dark:border-red-500 dark:text-red-500 dark:hover:bg-red-600 dark:hover:text-white focus:outline-none focus:ring-4 focus:ring-red-300 dark:focus:ring-red-900">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                                                        class="h-4 w-4 mr-1 inline-block" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd"
+                                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                            clip-rule="evenodd" />
+                                                    </svg>
+                                                    លុប
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="6" class="text-center p-4 text-red-500">មិនមានទិន្នន័យ</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                    <?php if ($totalPages > 1): ?>
+                        <div class="pagination flex space-x-1 items-center justify-center mt-4 no-print">
+                            <?php if ($page > 1): ?>
+                                <a href="?page=<?= $page - 1 ?>&gender=<?= urlencode($genderFilter) ?>&search=<?= urlencode($searchQuery) ?>"
+                                    class="rounded-full border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-slate-800 hover:border-slate-800 focus:text-white focus:bg-slate-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-slate-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                    មុន
+                                </a>
+                            <?php endif; ?>
+
+                            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                                <a href="?page=<?= $i ?>&gender=<?= urlencode($genderFilter) ?>&search=<?= urlencode($searchQuery) ?>"
+                                    class="min-w-9 rounded-full py-2 px-3.5 text-center text-sm transition-all shadow-sm hover:shadow-lg ml-2
+                <?= $i == $page
+                                    ? 'bg-slate-800 text-white'
+                                    : 'border border-slate-300 text-slate-600 hover:bg-slate-800 hover:text-white hover:border-slate-800' ?>">
+                                    <?= $i ?>
+                                </a>
+                            <?php endfor; ?>
+
+                            <?php if ($page < $totalPages): ?>
+                                <a href="?page=<?= $page + 1 ?>&gender=<?= urlencode($genderFilter) ?>&search=<?= urlencode($searchQuery) ?>"
+                                    class="rounded-full border border-slate-300 py-2 px-3 text-center text-sm transition-all shadow-sm hover:shadow-lg text-slate-600 hover:text-white hover:bg-slate-800 hover:border-slate-800 focus:text-white focus:bg-slate-800 focus:border-slate-800 active:border-slate-800 active:text-white active:bg-slate-800 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2">
+                                    បន្ទាប់
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
+
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+    <?php
+    $fetch_all_students = "SELECT * FROM `students_register` ORDER BY id DESC;";
+    $students = mysqli_query($connection, $fetch_all_students);
+    $totalStudents = mysqli_num_rows($students);
+
+    if ($totalStudents > 0) {
+        while ($row = mysqli_fetch_assoc($students)) {
+            $student_Id = $row['id'];
+    ?>
+            <!-- Preview Drawer -->
+            <div id="drawer-read-product-advanced<?php echo $student_Id; ?>"
+                class="overflow-y-auto fixed top-0 left-0 z-50 p-4 w-full max-w-lg h-screen bg-white transition-transform -translate-x-full dark:bg-[#1e1e1e]"
+                tabindex="-1" aria-labelledby="drawer-label" aria-hidden="true">
+                <div>
+                    <h4 id="read-drawer-label" class="mb-1.5 leading-none text-xl font-semibold text-gray-900 dark:text-white">
+                        ចុះឈ្មោះនៅ</h4>
+                    <h5 class="mb-5 text-xl font-bold text-gray-900 dark:text-white"><?php echo $row['created_at']; ?></h5>
+                </div>
+                <button type="button" data-drawer-dismiss="drawer-read-product-advanced<?php echo $student_Id; ?>"
+                    aria-controls="drawer-read-product-advanced<?php echo $student_Id; ?>"
+                    class="text-white bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                    <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewbox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <span class="sr-only">បិទម៉ឺនុយ</span>
+                </button>
+
+                <div class="grid grid-cols-3 gap-4 mb-4 sm:mb-5">
+                    <div class="p-2 w-auto bg-gray-100 rounded-lg dark:bg-[#181818]">
+                        <img src="<?php echo $row['image_url']; ?>" onerror="this.src='<?php echo $defaultavatar; ?>'">
+                    </div>
+                </div>
+
+                <dl class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 dark:bg-[#181818] dark:border-gray-600">
+                        <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">ឈ្មោះពេញ</dt>
+                        <dd class="text-gray-500 dark:text-white"><?php echo $row['full_name']; ?></dd>
+                    </div>
+
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 dark:bg-[#181818] dark:border-gray-600">
+                        <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">ភេទ</dt>
+                        <dd class="text-gray-500 dark:text-white"><?php echo $row['gender']; ?></dd>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 dark:bg-[#181818] dark:border-gray-600">
+                        <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">ថ្ងៃខែឆ្នាំកំណើត</dt>
+                        <dd class="text-gray-500 dark:text-white"><?php echo $row['dob']; ?></dd>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 dark:bg-[#181818] dark:border-gray-600">
+                        <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">ឈ្មោះឪពុក</dt>
+                        <dd class="text-gray-500 dark:text-white"><?php echo $row['father_name']; ?></dd>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 dark:bg-[#181818] dark:border-gray-600">
+                        <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">មុខរបររបស់ឪពុក</dt>
+                        <dd class="text-gray-500 dark:text-white"><?php echo $row['father_job']; ?></dd>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 dark:bg-[#181818] dark:border-gray-600">
+                        <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">ឈ្មោះម្តាយ</dt>
+                        <dd class="text-gray-500 dark:text-white"><?php echo $row['mother_name']; ?></dd>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 dark:bg-[#181818] dark:border-gray-600">
+                        <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">មុខរបររបស់ម្តាយ</dt>
+                        <dd class="text-gray-500 dark:text-white"><?php echo $row['mother_job']; ?></dd>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 dark:bg-[#181818] dark:border-gray-600">
+                        <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">ទីកន្លែងកំណើត</dt>
+                        <dd class="text-gray-500 dark:text-white overflow-hidden text-ellipsis break-words"
+                            style="word-wrap: break-word; white-space: normal;">
+                            <?php echo $row['place_of_birth']; ?>
+                        </dd>
+                    </div>
+
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 dark:bg-[#181818] dark:border-gray-600">
+                        <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">ទីតាំងបច្ចុប្បន្ន</dt>
+                        <dd class="text-gray-500 dark:text-white overflow-hidden text-ellipsis break-words"
+                            style="word-wrap: break-word; white-space: normal;">
+                            <?php echo $row['current_place']; ?></dd>
+                    </div>
+
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 dark:bg-[#181818] dark:border-gray-600">
+                        <dt class="mb-2 font-semibold leading-none text-gray-900 dark:text-white">លេខទូរស័ព្ទ</dt>
+                        <dd class="text-gray-500 dark:text-white"><?php echo $row['phone']; ?></dd>
+                    </div>
+                </dl>
+                <div class="flex bottom-0 left-0 justify-center pb-4 space-x-4 w-full">
+                    <button data-drawer-dismiss="drawer-read-product-advanced<?php echo $student_Id; ?>"
+                        aria-controls="drawer-read-product-advanced<?php echo $student_Id; ?>" type="button"
+                        class="text-white w-full inline-flex items-center justify-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                        ត្រឡប់ក្រោយ
+                    </button>
+                    <button onclick="window.location.href='export-students.php?id=<?php echo $student_Id; ?>'" class="inline-flex w-full items-center text-white justify-center bg-white hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-500 dark:hover:bg-blue-700 dark:focus:ring-blue-900">
+                        <svg aria-hidden="true" class="w-5 h-5 mr-1.5 -ml-1" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8.098 5.013a.144.144 0 0 1 .202.134V6.3a.5.5 0 0 0 .5.5c.667 0 2.013.005 3.3.822.984.624 1.99 1.76 2.595 3.876-1.02-.983-2.185-1.516-3.205-1.799a8.74 8.74 0 0 0-1.921-.306 7.404 7.404 0 0 0-.798.008h-.013l-.005.001h-.001L8.8 9.9l-.05-.498a.5.5 0 0 0-.45.498v1.153c0 .108-.11.176-.202.134L4.114 8.254a.502.502 0 0 0-.042-.028.147.147 0 0 1 0-.252.497.497 0 0 0 .042-.028l3.984-2.933zM9.3 10.386c.068 0 .143.003.223.006.434.02 1.034.086 1.7.271 1.326.368 2.896 1.202 3.94 3.08a.5.5 0 0 0 .933-.305c-.464-3.71-1.886-5.662-3.46-6.66-1.245-.79-2.527-.942-3.336-.971v-.66a1.144 1.144 0 0 0-1.767-.96l-3.994 2.94a1.147 1.147 0 0 0 0 1.946l3.994 2.94a1.144 1.144 0 0 0 1.767-.96v-.667z"
+                                fill="white"></path>
+                            <path
+                                d="M5.232 4.293a.5.5 0 0 0-.7-.106L.54 7.127a1.147 1.147 0 0 0 0 1.946l3.994 2.94a.5.5 0 1 0 .593-.805L1.114 8.254a.503.503 0 0 0-.042-.028.147.147 0 0 1 0-.252.5.5 0 0 0 .042-.028l4.012-2.954a.5.5 0 0 0 .106-.699z"
+                                fill="white"></path>
+                        </svg>
+                        នាំចេញទៅ Excel
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Delete Modal -->
+            <div id="delete-modal<?php echo $student_Id; ?>" tabindex="-1"
+                class="fixed top-0 left-0 right-0 z-50 hidden p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full">
+                <div class="relative w-full h-auto max-w-md max-h-full">
+                    <form method="post" id="delete_student<?php echo $student_Id; ?>">
+                        <div class="relative bg-white rounded-lg shadow dark:bg-[#181818]">
+                            <button type="button"
+                                class="absolute top-3 right-2.5 text-white bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-800 dark:hover:text-white"
+                                data-modal-toggle="delete-modal<?php echo $student_Id; ?>">
+                                <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewbox="0 0 20 20"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                <span class="sr-only">បិទម៉ូដុល</span>
+                            </button>
+
+                            <div class="p-6 text-center">
+                                <svg aria-hidden="true" class="mx-auto mb-4 text-white w-14 h-14 dark:text-gray-200"
+                                    fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <input type="hidden" name="student_id" value="<?php echo $student_Id; ?>" />
+                                <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-white">តើអ្នកប្រាកដថាចង់លុប
+                                    <?php echo $row['full_name']; ?>?</h3>
+                                <button name="student_delete" data-modal-toggle="delete-modal<?php echo $student_Id; ?>"
+                                    type="submit"
+                                    class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center mr-2">បាទ/ចាស,
+                                    ខ្ញុំប្រាកដ</button>
+                                <button data-modal-toggle="delete-modal<?php echo $student_Id; ?>" type="button"
+                                    class="text-gray-500 bg-white hover:bg-[#272727] focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-[#181818] dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">ទេ,
+                                    បោះបង់</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <script>
+                function mailto<?php echo $student_Id; ?>() {
+                    window.location.href = "mailto:<?php echo $row['email']; ?>";
+                }
+            </script>
+    <?php
+        }
+    }
+    ?>
+
+    <?php include('../includes/admin_footer.php') ?>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+
+</body>
+
+<script>
+    console.clear();
+</script>
+
+</html>

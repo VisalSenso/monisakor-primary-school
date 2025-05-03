@@ -1,0 +1,619 @@
+//Join.jsx
+import { useState } from "react";
+import axios from "axios";
+
+const Join = () => {
+  const [data, setData] = useState({
+    full_name: "",
+    gender: "",
+    dob: "",
+    father_name: "",
+    father_job: "",
+    mother_name: "",
+    mother_job: "",
+    place_of_birth: "",
+    current_place: "",
+    phone: "",
+    image: null, // Image upload
+  });
+
+  const [formErrors, setFormErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  // Handle text field changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "phone") {
+      const numericValue = value.replace(/\D/g, ""); // Fixed: replace all non-digit characters
+      if (numericValue.length <= 15) {
+        setData({ ...data, [name]: numericValue });
+      }
+    } else {
+      setData({ ...data, [name]: value });
+    }
+  };
+
+  // Handle file input changes
+  const handleFileChange = (e) => {
+    setData({ ...data, image: e.target.files[0] });
+  };
+
+  // Handle form submission using axios
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    // Trim string values
+    const trimmedData = { ...data };
+    Object.entries(trimmedData).forEach(([key, value]) => {
+      if (typeof value === "string") {
+        trimmedData[key] = value.trim();
+      }
+    });
+
+    // Validate inputs
+    let errors = {};
+
+    // General empty field validation
+    Object.entries(trimmedData).forEach(([key, value]) => {
+      if (!value && key !== "image") {
+        errors[key] = "សូមបំពេញព័ត៌មាននេះ";
+      }
+    });
+
+    // Phone number validation (starts with 0 and length between 8-10 digits)
+    const phonePattern = /^0\d{7,9}$/;
+    if (!phonePattern.test(trimmedData.phone)) {
+      errors.phone = "សូមបញ្ចូលលេខទូរស័ព្ទត្រឹមត្រូវ (ចាប់ផ្តើមដោយលេខ 0 មានចន្លោះ 8-10 ខ្ទង់)";
+    }
+
+    // Image validations
+    if (!trimmedData.image) {
+      errors.image = "សូមអាប់ឡូដរូបភាពមកផង";
+    } else {
+      if (trimmedData.image.size > 2 * 1024 * 1024) {
+        errors.image = "រូបភាពមិនអាចធំជាង 2MB";
+      }
+      if (!["image/jpeg", "image/png"].includes(trimmedData.image.type)) {
+        errors.image = "សូមជ្រើសរូបភាពប្រភេទ JPG ឬ PNG ប៉ុណ្ណោះ";
+      }
+    }
+
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      setLoading(false);
+      return;
+    }
+
+    const formDataToSend = new FormData();
+    Object.entries(trimmedData).forEach(([key, value]) => {
+      if (value !== null && value !== "") {
+        formDataToSend.append(key, value);
+      }
+    });
+
+    console.log("Form Data Being Sent: ", formDataToSend); // Log form data for debugging
+
+    try {
+      const response = await axios.post(
+        "http://localhost/project/monisakor-primary-school/server/api/Join.php",
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      console.log("Response:", response.data); // Debug: Log the response for inspection
+
+      const result = response.data;
+
+      if (response.status === 200 && result.message) {
+        alert("✅ " + result.message);
+        setData({
+          full_name: "",
+          gender: "",
+          dob: "",
+          father_name: "",
+          father_job: "",
+          mother_name: "",
+          mother_job: "",
+          place_of_birth: "",
+          current_place: "",
+          phone: "",
+          image: null,
+        });
+      } else {
+        alert("❌ " + result.error);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      if (error.response && error.response.data && error.response.data.error) {
+        alert("❌ " + error.response.data.error);
+      } else {
+        alert("❌ មានបញ្ហាមួយចំនួន។ សូមព្យាយាមម្តងទៀត!");
+      }
+    }
+    setLoading(false);
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 bg-white p-6 rounded-lg shadow-md"
+    >
+      {Object.entries(data).map(([key, value]) => (
+        <div key={key} className="relative">
+          <label
+            htmlFor={key}
+            className="text-sm font-medium text-gray-800 dark:text-gray-200"
+          >
+            {key
+              .replace(/_/g, " ")
+              .toUpperCase()
+              .replace("FULL NAME", "ឈ្មោះពេញ")
+              .replace("GENDER", "ភេទ")
+              .replace("DOB", "ថ្ងៃខែឆ្នាំកំណើត")
+              .replace("FATHER NAME", "ឈ្មោះឪពុក")
+              .replace("FATHER JOB", "មុខរបររបស់ឪពុក")
+              .replace("MOTHER NAME", "ឈ្មោះម្តាយ")
+              .replace("MOTHER JOB", "មុខរបររបស់ម្តាយ")
+              .replace("PLACE OF BIRTH", "ទីកន្លែងកំណើត")
+              .replace("CURRENT PLACE", "ទីកន្លែងបច្ចុប្បន្ន")
+              .replace("PHONE", "លេខទូរស័ព្ទ")
+              .replace("IMAGE", "រូបភាព")}
+          </label>
+
+          {key === "gender" ? (
+            <select
+              required
+              name={key}
+              id={key}
+              value={value}
+              onChange={handleChange}
+              className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            >
+              <option value="">ជ្រើសរើសភេទ</option>
+              <option value="ប្រុស">ប្រុស</option>
+              <option value="ស្រី">ស្រី</option>
+            </select>
+          ) : key === "dob" ? (
+            <input
+              required
+              type="date"
+              name={key}
+              id={key}
+              value={value}
+              onChange={handleChange}
+              className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            />
+          ) : key === "image" ? (
+            <input
+              required
+              type="file"
+              name={key}
+              id={key}
+              accept="image/*"
+              onChange={handleFileChange}
+              className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            />
+          ) : (
+            <input
+              required
+              type={key === "phone" ? "tel" : "text"}
+              name={key}
+              id={key}
+              value={value}
+              onChange={handleChange}
+              className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+            />
+          )}
+
+          {formErrors[key] && (
+            <p className="text-red-500 text-xs mt-1">{formErrors[key]}</p>
+          )}
+        </div>
+      ))}
+
+      <button
+        type="submit"
+        className="w-full py-2 px-4 bg-primary text-white font-medium rounded-lg hover:bg-opacity-90 transition"
+        disabled={loading}
+      >
+        {loading ? "កំពុងដំណើរការ..." : "ចូលរួម"}
+      </button>
+    </form>
+  );
+};
+
+export default Join;
+//end Join.jsx
+//join.php
+<?php
+ob_start();
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+    file_put_contents("error_log.txt", "Error: [$errno] $errstr in $errfile on line $errline\n", FILE_APPEND);
+    http_response_code(500);
+    echo json_encode(["error" => "Internal Server Error. Check error_log.txt"]);
+    exit;
+});
+
+header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: OPTIONS, POST");
+header("Access-Control-Allow-Headers: *");
+
+require_once "../config/db.php";
+
+$inputData = $_POST;
+
+$requiredFields = [
+    "full_name",
+    "gender",
+    "dob",
+    "father_name",
+    "father_job",
+    "mother_name",
+    "mother_job",
+    "place_of_birth",
+    "current_place",
+    "phone"
+];
+
+foreach ($requiredFields as $field) {
+    if (!isset($inputData[$field]) || empty($inputData[$field])) {
+        echo json_encode(["error" => "Missing or empty field: $field"]);
+        exit;
+    }
+}
+
+$full_name = $inputData['full_name'];
+$gender = $inputData['gender'];
+$dob = $inputData['dob'];
+$father_name = $inputData['father_name'];
+$father_job = $inputData['father_job'];
+$mother_name = $inputData['mother_name'];
+$mother_job = $inputData['mother_job'];
+$place_of_birth = $inputData['place_of_birth'];
+$current_place = $inputData['current_place'];
+$phone = $inputData['phone'];
+
+$image_url = "";
+if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+    if (in_array($_FILES['image']['type'], $allowedTypes)) {
+        $fileUploadName = $_FILES['image']['name'];
+        $fileUploadTmp = $_FILES['image']['tmp_name'];
+        $targetDirectory = $_SERVER['DOCUMENT_ROOT'] . '/project/monisakor-primary-school/assets/images/joinus/';
+        $targetFilePath = $targetDirectory . basename($fileUploadName);
+
+        if (!file_exists($targetDirectory)) {
+            mkdir($targetDirectory, 0777, true);
+        }
+
+        if (!is_writable($targetDirectory)) {
+            echo json_encode(["error" => "Target directory is not writable"]);
+            exit;
+        }
+
+        if (move_uploaded_file($fileUploadTmp, $targetFilePath)) {
+            $image_url = '/project/monisakor-primary-school/assets/images/joinus/' . basename($fileUploadName);
+        } else {
+            echo json_encode(["error" => "Failed to upload image"]);
+            exit;
+        }
+    } else {
+        echo json_encode(["error" => "Invalid image type"]);
+        exit;
+    }
+} else {
+    echo json_encode(["error" => "No image uploaded or upload error"]);
+    exit;
+}
+
+$sql = "INSERT INTO students_register (full_name, gender, dob, father_name, father_job, mother_name, mother_job, place_of_birth, current_place, phone, image_url) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+$stmt = $connection->prepare($sql);
+if (!$stmt) {
+    error_log("SQL Error: " . $connection->error);
+    echo json_encode(["error" => "SQL Error occurred"]);
+    exit;
+}
+
+$stmt->bind_param("sssssssssss", $full_name, $gender, $dob, $father_name, $father_job, $mother_name, $mother_job, $place_of_birth, $current_place, $phone, $image_url);
+
+if ($stmt->execute()) {
+    $updateQuery = "UPDATE `notification` SET total_notification = total_notification + 1 WHERE id = 1";
+    if (mysqli_query($connection, $updateQuery)) {
+        echo json_encode(["message" => "Student registered successfully!"]);
+    } else {
+        error_log("Notification Update Error: " . mysqli_error($connection));
+        echo json_encode(["error" => "Notification update failed"]);
+    }
+} else {
+    error_log("Execute Error: " . $stmt->error);
+    echo json_encode(["error" => "Insert failed"]);
+}
+
+$stmt->close();
+$connection->close();
+exit;
+
+//end join.php
+import React, { useState } from "react";
+import axios from "axios";
+
+const JoinModal = ({ isOpen, onClose }) => {
+  const [data, setData] = useState({
+    full_name: "",
+    gender: "",
+    dob: "",
+    father_name: "",
+    father_job: "",
+    mother_name: "",
+    mother_job: "",
+    place_of_birth: "",
+    current_place: "",
+    phone: "",
+    image: null,
+  });
+
+  const [formErrors, setFormErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const khmerNamePattern = /^[\u1780-\u17FF\s]+$/;
+  const placePattern = /^.+, .+, .+, .+$/;
+  const phonePattern = /^0\d{7,9}$/;
+
+  const cleanText = (text) =>
+    text.normalize("NFC").replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
+  
+  const validateField = (name, value) => {
+    let error = "";
+
+    if (name !== "image" && !value) {
+      error = "សូមបំពេញព័ត៌មាននេះ";
+    }
+
+    if (["full_name", "father_name", "mother_name"].includes(name)) {
+      if (value && !khmerNamePattern.test(value)) {
+        error = "សូមបញ្ចូលឈ្មោះជាភាសាខ្មែរ (ឧ. គុណ កនិ្នកា)";
+      }
+    }
+
+    if (["place_of_birth", "current_place"].includes(name)) {
+      if (value && !placePattern.test(value)) {
+        error = "សូមបញ្ចូលទ្រង់ទ្រាយត្រឹមត្រូវ៖ ភូមិ, ឃុំឬ សង្កាត់, ស្រុកឬ ខណ្ឌ, រាជធានីឬ ខេត្ដ";
+      }
+    }
+
+    if (name === "phone" && value && !phonePattern.test(value)) {
+      error = "សូមបញ្ចូលលេខទូរស័ព្ទត្រឹមត្រូវ (ចាប់ផ្តើមដោយលេខ 0 មានចន្លោះ 8-10 ខ្ទង់)";
+    }
+
+    return error;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const newValue = name === "phone" ? value.replace(/\D/g, "").slice(0, 15) : value;
+
+    const cleanedValue = typeof newValue === "string" ? cleanText(newValue) : newValue;
+
+    setData((prev) => ({ ...prev, [name]: newValue }));
+
+    const error = validateField(name, cleanedValue);
+    setFormErrors((prev) => ({ ...prev, [name]: error }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setData((prev) => ({ ...prev, image: file }));
+
+    let error = "";
+    if (!file) {
+      error = "សូមអាប់ឡូដរូបភាពមកផង";
+    } else if (file.size > 2 * 1024 * 1024) {
+      error = "រូបភាពមិនអាចធំជាង 2MB";
+    } else if (!["image/jpeg", "image/png"].includes(file.type)) {
+      error = "សូមជ្រើសរូបភាពប្រភេទ JPG ឬ PNG ប៉ុណ្ណោះ";
+    }
+
+    setFormErrors((prev) => ({ ...prev, image: error }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    let errors = {};
+    Object.entries(data).forEach(([key, value]) => {
+      if (key !== "image") {
+        const cleaned = typeof value === "string" ? cleanText(value) : value;
+        const error = validateField(key, cleaned);
+        if (error) errors[key] = error;
+      }
+    });
+
+    // Validate image separately
+    const file = data.image;
+    if (!file) {
+      errors.image = "សូមអាប់ឡូដរូបភាពមកផង";
+    } else if (file.size > 2 * 1024 * 1024) {
+      errors.image = "រូបភាពមិនអាចធំជាង 2MB";
+    } else if (!["image/jpeg", "image/png"].includes(file.type)) {
+      errors.image = "សូមជ្រើសរូបភាពប្រភេទ JPG ឬ PNG ប៉ុណ្ណោះ";
+    }
+
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      setLoading(false);
+      return;
+    }
+
+    // Prepare FormData
+    const formDataToSend = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value) formDataToSend.append(key, value);
+    });
+
+    try {
+      const response = await axios.post(
+        "http://localhost/project/monisakor-primary-school/server/api/Join.php",
+        formDataToSend,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      const result = response.data;
+
+      if (response.status === 200 && result.message) {
+        alert("✅ " + result.message);
+        setData({
+          full_name: "",
+          gender: "",
+          dob: "",
+          father_name: "",
+          father_job: "",
+          mother_name: "",
+          mother_job: "",
+          place_of_birth: "",
+          current_place: "",
+          phone: "",
+          image: null,
+        });
+        setFormErrors({});
+      } else {
+        alert("❌ " + result.error);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("❌ មានបញ្ហាមួយចំនួន។ សូមព្យាយាមម្តងទៀត!");
+    }
+
+    setLoading(false);
+  };
+
+  const placeholderMap = {
+    full_name: "បញ្ចូលឈ្មោះពេញ",
+    gender: "ជ្រើសរើសភេទ",
+    dob: "ជ្រើសរើសថ្ងៃខែឆ្នាំកំណើត",
+    father_name: "បញ្ចូលឈ្មោះឪពុក",
+    father_job: "បញ្ចូលមុខរបររបស់ឪពុក",
+    mother_name: "បញ្ចូលឈ្មោះម្តាយ",
+    mother_job: "បញ្ចូលមុខរបររបស់ម្តាយ",
+    place_of_birth: "បញ្ចូលទីកន្លែងកំណើត ឧ. ភូមិ ពោធិ៍ថ្មី, ឃុំ ស្វាយតាយាន, ស្រុក កំពុងរោទ៍, ខេត្ត ស្វាយរៀង",
+    current_place: "បញ្ចូលទីកន្លែងបច្ចុប្បន្ន ឧ. ភូមិ ពោធិ៍ថ្មី, ឃុំ ស្វាយតាយាន, ស្រុក កំពុងរោទ៍, ខេត្ត ស្វាយរៀង",
+    phone: "បញ្ចូលលេខទូរស័ព្ទ",
+    image: "",
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl p-6 relative overflow-y-auto max-h-[90vh]">
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-4 text-xl text-black dark:text-white"
+        >
+          &times;
+        </button>
+        <h2 className="text-xl font-bold text-center mb-4">ចូលរួមជាមួយពួកយើង</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {Object.entries(data).map(([key, value]) => (
+            <div key={key} className="relative">
+              <label htmlFor={key} className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                {{
+                  full_name: "ឈ្មោះពេញ",
+                  gender: "ភេទ",
+                  dob: "ថ្ងៃខែឆ្នាំកំណើត",
+                  father_name: "ឈ្មោះឪពុក",
+                  father_job: "មុខរបររបស់ឪពុក",
+                  mother_name: "ឈ្មោះម្តាយ",
+                  mother_job: "មុខរបររបស់ម្តាយ",
+                  place_of_birth: "ទីកន្លែងកំណើត",
+                  current_place: "ទីកន្លែងបច្ចុប្បន្ន",
+                  phone: "លេខទូរស័ព្ទ",
+                  image: "រូបភាព",
+                }[key]}
+              </label>
+
+              {key === "gender" ? (
+                <select
+                  name={key}
+                  id={key}
+                  value={value}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2 mt-1 border ${
+                    formErrors[key] ? "border-red-500" : "border-gray-300"
+                  } rounded-lg focus:ring-2 focus:ring-primary focus:outline-none`}
+                >
+                  <option value="">{placeholderMap[key]}</option>
+                  <option value="ប្រុស">ប្រុស</option>
+                  <option value="ស្រី">ស្រី</option>
+                </select>
+              ) : key === "dob" ? (
+                <input
+                  type="date"
+                  name={key}
+                  id={key}
+                  value={value}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2 mt-1 border ${
+                    formErrors[key] ? "border-red-500" : "border-gray-300"
+                  } rounded-lg focus:ring-2 focus:ring-primary focus:outline-none`}
+                />
+              ) : key === "image" ? (
+                <input
+                  type="file"
+                  name={key}
+                  id={key}
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className={`w-full px-4 py-2 mt-1 border ${
+                    formErrors[key] ? "border-red-500" : "border-gray-300"
+                  } rounded-lg focus:ring-2 focus:ring-primary focus:outline-none`}
+                />
+              ) : (
+                <input
+                  type={key === "phone" ? "tel" : "text"}
+                  name={key}
+                  id={key}
+                  value={value}
+                  placeholder={placeholderMap[key]}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2 mt-1 border ${
+                    formErrors[key] ? "border-red-500" : "border-gray-300"
+                  } rounded-lg focus:ring-2 focus:ring-primary focus:outline-none`}
+                />
+              )}
+
+              {formErrors[key] && (
+                <p className="text-red-500 text-xs mt-1">{formErrors[key]}</p>
+              )}
+            </div>
+          ))}
+
+          <button
+            type="submit"
+            className="w-full py-2 px-4 bg-primary text-white font-medium rounded-lg hover:bg-opacity-90 transition"
+            disabled={loading}
+          >
+            {loading ? "កំពុងដំណើរការ..." : "ចូលរួម"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default JoinModal;
